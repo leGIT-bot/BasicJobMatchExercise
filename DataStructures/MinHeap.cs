@@ -1,4 +1,5 @@
 ﻿using Project.Entities;
+using Project.Services;
 
 namespace Project.DataStructures;
 
@@ -6,12 +7,12 @@ public class MinHeap
 {
     private readonly Job[] _elements;
     private int _size;
-    private JobSeeker _seeker;
+    private JobService _seekerService;
 
-    public MinHeap(JobSeeker seeker, int size)
+    public MinHeap(JobService seekerService, int size)
     {
         _elements = new Job[size];
-        _seeker = seeker;
+        _seekerService = seekerService;
     }
 
     private int GetLeftChildIndex(int elementIndex) => 2 * elementIndex + 1;
@@ -60,15 +61,42 @@ public class MinHeap
         return result;
     }
 
+    public void AddMany(IEnumerable<Job> jobs)
+    {
+        foreach (var job in jobs)
+        {
+            Add(job);
+        }
+    }
+
     public void Add(Job element)
     {
         if (_size == _elements.Length)
-            throw new IndexOutOfRangeException();
+        {
+            if (_seekerService.Compare(element, Peek()))
+            {
+                _elements[0] = element;
+                ReCalculateDown();
+            }
+        }
+        else
+        {
+            _elements[_size] = element;
+            _size++;
 
-        _elements[_size] = element;
-        _size++;
+            ReCalculateUp();
+        }
+    }
 
-        ReCalculateUp();
+    public List<Job> Export()
+    {
+        List<Job> jobs = new List<Job>();
+        for (int i = 0; i < _size; i++)
+        {
+            jobs.Add(Pop());
+        }
+        jobs.Reverse();
+        return jobs;
     }
 
     private void ReCalculateDown()
@@ -77,12 +105,12 @@ public class MinHeap
         while (HasLeftChild(index))
         {
             var smallerIndex = GetLeftChildIndex(index);
-            if (HasRightChild(index) && Compare(GetLeftChild(index), GetRightChild(index)))
+            if (HasRightChild(index) && _seekerService.Compare(GetLeftChild(index), GetRightChild(index)))
             {
                 smallerIndex = GetRightChildIndex(index);
             }
 
-            if (Compare(_elements[smallerIndex], _elements[index]))
+            if (_seekerService.Compare(_elements[smallerIndex], _elements[index]))
             {
                 break;
             }
@@ -95,33 +123,11 @@ public class MinHeap
     private void ReCalculateUp()
     {
         var index = _size - 1;
-        while (!IsRoot(index) && Compare(GetParent(index), _elements[index]))
+        while (!IsRoot(index) && _seekerService.Compare(GetParent(index), _elements[index]))
         {
             var parentIndex = GetParentIndex(index);
             Swap(parentIndex, index);
             index = parentIndex;
         }
-    }
-
-    private bool Compare(Job job1, Job job2)
-    {
-        int skillNum1 = Compatibility(job1);
-        int skillNum2 = Compatibility(job2);
-        if (skillNum1 > skillNum2)
-        {
-            return true;
-        }
-        else if(skillNum1 < skillNum2) {
-            return false;
-        }
-        else
-        {
-            return job1.Id < job2.Id;
-        }
-    }
-
-    private int Compatibility(Job job)
-    {
-        return job.RequiredSkills.Intersect(_seeker.Skills).Count();
     }
 }
