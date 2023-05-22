@@ -5,7 +5,23 @@ using Project.DataStructures;
 using Project.Entities;
 using Project.Services;
 
-int size = 5;
+int size = 3;
+if (args.Length == 1)
+{
+    bool isNumber = int.TryParse(args[0], out int _size);
+    if (isNumber && _size > 1)
+    {
+        size = _size;
+    }
+    else if (isNumber)
+    {
+        throw new ArgumentException("Invalid number for input");
+    }
+    else
+    {
+        throw new ArgumentException("Invalid argument, size should be a number");
+    }
+}
 
 IEnumerable<Job> jobs;
 using (var reader = new StreamReader("jobs.csv"))
@@ -41,6 +57,10 @@ foreach (var seeker in jobSeekers)
 
 try
 {
+    if (File.Exists("./output.csv"))
+    {
+        File.Delete("./output.csv");
+    }
     File.AppendAllText("./output.csv", output.ToString());
 }
 catch (Exception ex)
