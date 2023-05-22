@@ -6,6 +6,8 @@ using Project.Entities;
 using Project.Services;
 
 int size = 3;
+
+// read args
 if (args.Length == 1)
 {
     bool isNumber = int.TryParse(args[0], out int _size);
@@ -23,6 +25,7 @@ if (args.Length == 1)
     }
 }
 
+// read csv data
 IEnumerable<Job> jobs;
 using (var reader = new StreamReader("jobs.csv"))
 using (var csv = new CsvReader(reader, CultureInfo.InvariantCulture))
@@ -39,6 +42,7 @@ using (var csv = new CsvReader(reader, CultureInfo.InvariantCulture))
     jobSeekers = csv.GetRecords<JobSeeker>().ToList();
 }
 
+// create text
 string separator = ",";
 StringBuilder output = new StringBuilder();
 string[] headings = { "jobseeker_id", "jobseeker_name", "job_id", "job_title", "matching_skill_count" };
@@ -46,6 +50,7 @@ output.AppendLine(string.Join(separator, headings));
 
 foreach (var seeker in jobSeekers)
 {
+    // use minheap to get top preferences, refer to readme for performance 
     JobService jobService = new JobService(seeker);
     MinHeap heap = new MinHeap(jobService, size);
     heap.AddMany(jobs);
@@ -57,6 +62,7 @@ foreach (var seeker in jobSeekers)
 
 try
 {
+    // write to file
     if (File.Exists("./output.csv"))
     {
         File.Delete("./output.csv");
